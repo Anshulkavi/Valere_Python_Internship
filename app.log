@@ -1,0 +1,28 @@
+2025-07-17 17:02:46,591 - INFO - Program started
+2025-07-17 17:02:46,591 - DEBUG - Trying to divide 10 by 2
+2025-07-17 17:02:53,081 - INFO - Program started
+2025-07-17 17:02:53,081 - DEBUG - Trying to divide 10 by 2
+2025-07-17 17:02:53,081 - INFO - Division successful: 5.0
+2025-07-17 17:02:53,081 - DEBUG - Trying to divide 5 by 0
+2025-07-17 17:02:53,081 - ERROR - Attempted division by zero!
+Traceback (most recent call last):
+  File "d:\project\Python_Internship\DAY5_ ExceptionHandlingLogging\my_logger_example.py", line 16, in divide
+    result = x / y
+             ~~^~~
+ZeroDivisionError: division by zero
+2025-07-17 17:02:53,094 - WARNING - This is just a warning message
+2025-07-17 17:02:53,094 - CRITICAL - Something really critical happened
+2025-07-17 17:02:53,097 - INFO - Program finished
+2025-07-17 17:11:22,319 - INFO - Program started
+2025-07-17 17:11:22,319 - DEBUG - Trying to divide 10 by 2
+2025-07-17 17:11:22,319 - INFO - Division successful: 5.0
+2025-07-17 17:11:22,319 - DEBUG - Trying to divide 5 by 0
+2025-07-17 17:11:22,319 - ERROR - Attempted division by zero!
+Traceback (most recent call last):
+  File "d:\project\Python_Internship\DAY5_ ExceptionHandlingLogging\my_logger_example.py", line 16, in divide
+    result = x / y
+             ~~^~~
+ZeroDivisionError: division by zero
+2025-07-17 17:11:22,328 - WARNING - This is just a warning message
+2025-07-17 17:11:22,328 - CRITICAL - Something really critical happened
+2025-07-17 17:11:22,328 - INFO - Program finished
