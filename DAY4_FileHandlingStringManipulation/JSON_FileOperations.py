@@ -13,7 +13,6 @@ json.load()	    Reads from a JSON file
 json.dumps()	Converts Python object → string
 json.loads()	Converts string → Python object
 
-'''
 
 import json 
 
@@ -38,22 +37,22 @@ with open("user.json", "r") as file:
 for user in data:
     print(user["name"], "-", user["skills"])    
 
-'''
+
 
 #json.dumps() -- Python -> JSON string
-'''
+
 data = {"name": "Anshul", "age": 22}
 json_string = json.dumps(data)
 print(json_string)
-'''
+
 
 #json.loads() -- JSON string --> Python
-'''
+
 json_string = '{"name": "Anshul", "age": 22}'
 data = json.loads(json_string)
 print(data["name"])
 print(type(data))
-'''
+
 
 # Sample Nested JSON
 json_string = '''
@@ -67,18 +66,18 @@ json_string = '''
     "college": "ABC Institute"
   }
 }
-'''
+
 #Parse the string to a Python dict
 
 data = json.loads(json_string)
 # print(data)
 
 #Accessing nested data
-'''
+
 print(data["name"])
 print(data["skills"][1])
 print(data["education"]["college"])
-'''
+
 
 #Loop through Keys
 # for skill in data["skills"]:

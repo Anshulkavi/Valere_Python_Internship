@@ -1,5 +1,5 @@
 # try-except
-'''
+
 try:
     num = int(input("Enter a number: "))
     result = 10 / num
@@ -9,9 +9,9 @@ except ZeroDivisionError:
 except ValueError:
     print("Invalid input! Please enter a number.")    
 
-'''
+
 # try-except-else-finally
-'''
+
 try:
     a = int(input("Enter A: "))
     b = int(input("Enter B: "))
@@ -22,7 +22,7 @@ else:
     print("Result:", division)
 finally:
     print("Execution complete")            
-'''
+
 
 # Custom Exceptions
 class NegativeAgeError(Exception):
