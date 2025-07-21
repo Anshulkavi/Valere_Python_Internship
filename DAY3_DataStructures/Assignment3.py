@@ -44,7 +44,7 @@ def search_student():
 
 
 def update_marks():
-    name = input("Enter student name to update: ")
+    name = input("Enter student name to update: ").strip().title()
     if name not in students:
         print("Student not found")
         return
@@ -58,7 +58,7 @@ def update_marks():
 
 
 def delete_students():
-    name = input("Enter student name to delete: ")
+    name = input("Enter student name to delete: ").strip().title()
     if name in students:
         students.pop(name)
         print("Student deleted.")
