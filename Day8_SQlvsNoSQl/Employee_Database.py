@@ -125,6 +125,7 @@ def menu():
         else:
             print("Invalid choice. Try again.")
 
+
 # --- Main ---
 if __name__ == "__main__":
     setup_table()
