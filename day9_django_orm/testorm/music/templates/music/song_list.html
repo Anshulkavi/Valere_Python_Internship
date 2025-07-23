@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head><title>songs</title></head>
+    <body>
+        <h1>song</h1>
+        <ul>
+            {% for song in songs %}
+            <li>
+                {{ song.name }} by {{ song.singer } from {{song.album}}}
+                [<a href="{% url 'update_song' Song.id %}">Edit</a>]
+                [<a href="{% url 'delete_song' Song.id %}">Delete</a>]
+            </li>
+            {% empty %}
+            <li>No Songs found.</li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

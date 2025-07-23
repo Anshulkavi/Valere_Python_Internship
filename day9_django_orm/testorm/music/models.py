@@ -13,6 +13,7 @@ class Album(models.Model):
 
 class Song(models.Model):
     name = models.CharField(max_length=100)
+    singer = models.CharField(max_length=30)
     album = models.ForeignKey(Album, on_delete=models.CASCADE)
 
     def __str__(self):

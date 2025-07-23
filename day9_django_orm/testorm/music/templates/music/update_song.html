@@ -1,0 +1,7 @@
+<h1>Update Song</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Update</button>
+</form>
+<a href="{% url 'song_list' %}">Back to list of Songs</a>
