@@ -2,9 +2,11 @@
 <html>
   <head>
     <title>Albums</title>
+    <a href="{% url 'song_list' %}">list of Songs</a>
   </head>
   <body>
-    <h1>Albums</h1>
+    <h1>Albums 
+    </h1>
     <ul>
       {% for album in albums %}
       <li>
