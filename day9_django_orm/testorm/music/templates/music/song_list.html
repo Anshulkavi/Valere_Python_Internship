@@ -7,12 +7,13 @@
             {% for song in songs %}
             <li>
                 {{ song.name }} by {{ song.singer } from {{song.album}}}
-                [<a href="{% url 'update_song' Song.id %}">Edit</a>]
-                [<a href="{% url 'delete_song' Song.id %}">Delete</a>]
+                [<a href="{% url 'update_song' song.id %}">Edit</a>]
+                [<a href="{% url 'delete_song' song.id %}">Delete</a>]
             </li>
             {% empty %}
             <li>No Songs found.</li>
             {% endfor %}
+            <a href="{% url 'add_song' %}">Add a new song</a>
         </ul>
     </body>
 </html>
