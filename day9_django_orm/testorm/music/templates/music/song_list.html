@@ -1,25 +1,5 @@
-<!-- <!DOCTYPE html>
-<html>
-    <head><title>songs</title>
-        <a href="{% url 'album_list' %}">list of Album</a>
-</head>
-    <body>
-        <h1>song</h1>
-        <ul>
-            {% for song in songs %}
-            <li>
-                {{ song.name }} by {{ song.singer }} from {{song.album}}
-                [<a href="{% url 'update_song' song.id %}">Edit</a>]
-                [<a href="{% url 'delete_song' song.id %}">Delete</a>]
-            </li>
-            {% empty %}
-            <li>No Songs found.</li>
-            {% endfor %}
-            <a href="{% url 'add_song' %}">Add a new song</a>
-        </ul>
-    </body>
-</html> -->
-<!-- music/song_list.html -->
+
+ <!-- {% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -45,5 +25,40 @@
       {% endfor %}
     </ul>
   </div>
+</body>
+</html> -->
+
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Song List</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+
+  <h1 class="text-primary mb-4">🎵 All Songs</h1>
+
+  <div class="mb-3">
+    <a href="{% url 'add_song' %}" class="btn btn-success me-2">Add New Song</a>
+    <a href="{% url 'album_list' %}" class="btn btn-secondary">List of Albums</a>
+  </div>
+
+  <ul class="list-group">
+    {% for song in songs %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>
+          <strong>{{ song.name }}</strong> by <em>{{ song.singer }}</em> from <u>{{ song.album }}</u>
+        </span>
+        <span>
+          <a href="{% url 'update_song' song.id %}" class="btn btn-sm btn-warning me-2">Edit</a>
+          <a href="{% url 'delete_song' song.id %}" class="btn btn-sm btn-danger">Delete</a>
+        </span>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No songs found.</li>
+    {% endfor %}
+  </ul>
+
 </body>
 </html>
