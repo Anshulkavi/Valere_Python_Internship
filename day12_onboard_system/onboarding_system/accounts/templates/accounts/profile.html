@@ -1,0 +1,295 @@
+<!-- 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+    <h2 class="text-xl font-bold mb-4">Your Profile</h2>
+    <div id="profile-display" class="space-y-2 text-gray-800"></div>
+
+    <button onclick="logout()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+      Logout
+    </button>
+    <p id="message" class="text-sm text-red-600 mt-2"></p>
+  </div>
+
+  <script>
+    async function loadProfile() {
+      const token = localStorage.getItem("access");
+      const res = await fetch("/api/profile/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        localStorage.clear();
+        window.location.href = "/login/";
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById("profile-display").innerHTML = `
+        <div><strong>Username:</strong> ${data.username}</div>
+        <div><strong>Email:</strong> ${data.email}</div>
+        <div><strong>First Name:</strong> ${data.first_name || "N/A"}</div>
+        <div><strong>Last Name:</strong> ${data.last_name || "N/A"}</div>
+        <div><strong>Full Name:</strong> ${data.full_name || "N/A"}</div>
+        <div><strong>Phone:</strong> ${data.phone_number || "N/A"}</div>
+        <div><strong>Email Verified:</strong> ${data.is_email_verified ? "✅" : "❌"}</div>
+        <div><strong>Profile Completed:</strong> ${data.is_profile_completed ? "✅" : "❌"}</div>
+      `;
+    }
+
+    function logout() {
+      const access = localStorage.getItem("access");
+      const refresh = localStorage.getItem("refresh");
+
+      fetch("/api/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({ refresh }),
+      }).then(() => {
+        localStorage.clear();
+        window.location.href = "/login/";
+      }).catch(() => {
+        localStorage.clear();
+        window.location.href = "/login/";
+      });
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html> -->
+
+<!-- profile.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+    <h2 class="text-xl font-bold mb-4">Your Profile</h2>
+    <div id="profile-display" class="space-y-2"></div>
+
+    <div id="edit-section" class="hidden space-y-2">
+      <input type="text" id="full_name" placeholder="Full Name" class="w-full p-2 border rounded" />
+      <input type="text" id="phone_number" placeholder="Phone Number" class="w-full p-2 border rounded" />
+      <button onclick="saveProfile()" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+    </div>
+
+    <button onclick="toggleEdit()" id="edit-btn" class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded">Edit Profile</button>
+    <button onclick="logout()" class="mt-2 bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+
+    <p id="message" class="text-sm text-red-600 mt-2"></p>
+  </div>
+
+  <script>
+    let currentProfile = null;
+
+    async function loadProfile() {
+      const token = localStorage.getItem("access");
+      const res = await fetch("/api/profile/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        localStorage.clear();
+        window.location.href = "/login/";
+        return;
+      }
+
+      const data = await res.json();
+      currentProfile = data;
+
+      document.getElementById("profile-display").innerHTML = `
+        <div><strong>Username:</strong> ${data.username}</div>
+        <div><strong>Email:</strong> ${data.email}</div>
+        <div><strong>Full Name:</strong> ${data.full_name || "N/A"}</div>
+        <div><strong>Phone:</strong> ${data.phone_number || "N/A"}</div>
+        <div><strong>Email Verified:</strong> ${data.is_email_verified ? "✅" : "❌"}</div>
+        <div><strong>Profile Completed:</strong> ${data.is_profile_completed ? "✅" : "❌"}</div>
+      `;
+
+      document.getElementById("full_name").value = data.full_name || "";
+      document.getElementById("phone_number").value = data.phone_number || "";
+    }
+
+    function toggleEdit() {
+      const editSection = document.getElementById("edit-section");
+      editSection.classList.toggle("hidden");
+    }
+
+    async function saveProfile() {
+      const token = localStorage.getItem("access");
+      const full_name = document.getElementById("full_name").value;
+      const phone_number = document.getElementById("phone_number").value;
+
+      const res = await fetch("/api/complete-profile/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ full_name, phone_number }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        document.getElementById("message").innerText = "Profile updated successfully!";
+        toggleEdit();
+        loadProfile(); // Reload profile with updated data
+      } else {
+        document.getElementById("message").innerText = result.detail || "Update failed";
+      }
+    }
+
+    function logout() {
+      const access = localStorage.getItem("access");
+      const refresh = localStorage.getItem("refresh");
+
+      fetch("/api/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({ refresh }),
+      }).then(() => {
+        localStorage.clear();
+        window.location.href = "/login/";
+      }).catch(() => {
+        localStorage.clear();
+        window.location.href = "/login/";
+      });
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html> -->
+
+<!-- profile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<!-- <body class="bg-gray-100"> -->
+  <body
+    class="bg-cover bg-center min-h-screen flex items-center justify-center"
+    style="background-image: url('/static/images/background.jpeg')"
+  >
+<div class="max-w-xl w-full mx-auto mt-10 p-8 bg-white shadow-2xl rounded-2xl">
+    <h2 class="text-xl font-bold mb-4">Your Profile</h2>
+    
+    <div id="profile-display" class="space-y-2"></div>
+
+    <div id="edit-section" class="hidden space-y-2">
+      <input type="text" id="full_name" placeholder="Full Name" class="w-full p-2 border rounded" />
+      <input type="text" id="phone_number" placeholder="Phone Number" class="w-full p-2 border rounded" />
+      <button onclick="saveProfile()" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+    </div>
+
+    <button onclick="toggleEdit()" id="edit-btn" class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded">Edit Profile</button>
+    <button onclick="logout()" class="mt-2 bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+
+    <p id="message" class="text-sm text-green-600 mt-2"></p>
+  </div>
+
+  <script>
+    let currentProfile = null;
+
+    async function loadProfile() {
+      const token = localStorage.getItem("access");
+      const res = await fetch("/api/profile/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        localStorage.clear();
+        window.location.href = "/login/";
+        return;
+      }
+
+      const data = await res.json();
+      currentProfile = data;
+
+      document.getElementById("profile-display").innerHTML = `
+        <div><strong>Username:</strong> ${data.username}</div>
+        <div><strong>Email:</strong> ${data.email}</div>
+        <div><strong>Full Name:</strong> ${data.full_name || "N/A"}</div>
+        <div><strong>Phone:</strong> ${data.phone_number || "N/A"}</div>
+        <div><strong>Email Verified:</strong> ${data.is_email_verified ? "✅" : "❌"}</div>
+        <div><strong>Profile Completed:</strong> ${data.is_profile_completed ? "✅" : "❌"}</div>
+      `;
+
+      document.getElementById("full_name").value = data.full_name || "";
+      document.getElementById("phone_number").value = data.phone_number || "";
+    }
+
+    function toggleEdit() {
+      const editSection = document.getElementById("edit-section");
+      editSection.classList.toggle("hidden");
+    }
+
+    async function saveProfile() {
+      const token = localStorage.getItem("access");
+      const full_name = document.getElementById("full_name").value;
+      const phone_number = document.getElementById("phone_number").value;
+
+      const res = await fetch("/api/profile/", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ full_name, phone_number }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        document.getElementById("message").innerText = "Profile updated successfully!";
+        toggleEdit();
+        loadProfile(); // Reload updated info
+      } else {
+        document.getElementById("message").innerText = result.detail || "Update failed.";
+      }
+    }
+
+    function logout() {
+      const access = localStorage.getItem("access");
+      const refresh = localStorage.getItem("refresh");
+
+      fetch("/api/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({ refresh }),
+      }).finally(() => {
+        localStorage.clear();
+        window.location.href = "/login/";
+      });
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

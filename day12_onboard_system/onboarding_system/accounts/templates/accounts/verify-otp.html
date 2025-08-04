@@ -1,0 +1,545 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Verify OTP</title>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100">
+    <div class="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+      <h2 class="text-xl font-bold mb-4">Verify OTP</h2>
+      
+      <div id="email-display" class="mb-4 p-3 bg-blue-50 rounded">
+        <p class="text-sm text-blue-800">OTP sent to: <span id="display-email" class="font-semibold"></span></p>
+      </div>
+
+      <form id="otp-form" class="space-y-4">
+        <div>
+          <input
+            name="otp"
+            placeholder="Enter 6-digit OTP"
+            class="w-full border px-3 py-2 rounded text-center text-lg tracking-widest"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+          />
+          <p class="text-xs text-gray-500 mt-1">Enter the 6-digit code sent to your email</p>
+        </div>
+        
+        <button
+          type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold"
+        >
+          Verify OTP
+        </button>
+      </form>
+
+      <div class="mt-4 space-y-2">
+        <p class="text-sm text-gray-600">
+          Didn't receive the code?
+          <button id="resend-btn" class="text-blue-600 underline hover:text-blue-800">
+            Resend OTP
+          </button>
+        </p>
+        
+        <p class="text-sm text-gray-600">
+          Wrong email?
+          <button id="change-email-toggle" class="text-blue-600 underline hover:text-blue-800">
+            Change Email
+          </button>
+        </p>
+      </div>
+
+      <form id="change-email-form" class="space-y-2 mt-4 hidden border-t pt-4">
+        <input
+          name="new_email"
+          type="email"
+          placeholder="Enter correct email address"
+          class="w-full border px-3 py-2 rounded"
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+        >
+          Send OTP to New Email
+        </button>
+      </form>
+
+      <div class="mt-4">
+        <p class="text-sm text-gray-600">
+          <a href="/login/" class="text-blue-600 underline hover:text-blue-800">← Back to Login</a>
+        </p>
+      </div>
+
+      <div id="message" class="mt-4 p-3 rounded hidden">
+        <p id="message-text" class="text-sm"></p>
+      </div>
+    </div>
+
+    <script>
+      function getCSRFToken() {
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        return tokenMeta ? tokenMeta.getAttribute("content") : "";
+      }
+
+      function showMessage(text, isError = false) {
+        const messageDiv = document.getElementById("message");
+        const messageText = document.getElementById("message-text");
+        
+        messageText.textContent = text;
+        messageDiv.className = `mt-4 p-3 rounded ${isError ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`;
+        messageDiv.classList.remove("hidden");
+        
+        setTimeout(() => {
+          messageDiv.classList.add("hidden");
+        }, 5000);
+      }
+
+      // Initialize email display
+      function initializeEmail() {
+        let email = localStorage.getItem("user_email");
+        
+        // If no email in localStorage, try to get from API if user has token
+        if (!email) {
+          const token = localStorage.getItem("access");
+          if (token) {
+            fetch("/api/profile/", {
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.email) {
+                email = data.email;
+                localStorage.setItem("user_email", email);
+                document.getElementById("display-email").textContent = email;
+              }
+            })
+            .catch(() => {
+              showMessage("Please login again to continue.", true);
+              setTimeout(() => {
+                window.location.href = "/login/";
+              }, 2000);
+            });
+          } else {
+            showMessage("Please login or register first.", true);
+            setTimeout(() => {
+              window.location.href = "/login/";
+            }, 2000);
+          }
+        } else {
+          document.getElementById("display-email").textContent = email;
+        }
+      }
+
+      // Submit OTP form
+      document.getElementById("otp-form").onsubmit = async function (e) {
+        e.preventDefault();
+        const otp = e.target.otp.value.trim();
+        const email = localStorage.getItem("user_email");
+
+        if (!email) {
+          showMessage("Email not found. Please try logging in again.", true);
+          return;
+        }
+
+        if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+          showMessage("Please enter a valid 6-digit OTP.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/verify-otp/", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify({ email, otp }),
+          });
+
+          const data = await res.json();
+          
+          if (res.ok) {
+            // Store tokens
+            localStorage.setItem("access", data.access);
+            localStorage.setItem("refresh", data.refresh);
+            localStorage.removeItem("user_email");
+            
+            showMessage("✅ Email verified successfully! Redirecting...");
+            
+            setTimeout(() => {
+              if (data.user && !data.user.is_profile_completed) {
+                window.location.href = "/complete-profile/";
+              } else {
+                window.location.href = "/profile/";
+              }
+            }, 1500);
+          } else {
+            showMessage(data.detail || "OTP verification failed. Please try again.", true);
+          }
+        } catch (error) {
+          showMessage("Network error. Please check your connection and try again.", true);
+        }
+      };
+
+      // Resend OTP
+      document.getElementById("resend-btn").onclick = async function (e) {
+        e.preventDefault();
+        const email = localStorage.getItem("user_email");
+
+        if (!email) {
+          showMessage("Email not found. Please try logging in again.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/send-otp/", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            showMessage("New OTP sent to your email. Please check your inbox.");
+          } else {
+            showMessage(data.detail || "Failed to resend OTP. Please try again.", true);
+          }
+        } catch (error) {
+          showMessage("Network error. Please try again.", true);
+        }
+      };
+
+      // Show change email form
+      document.getElementById("change-email-toggle").onclick = function (e) {
+        e.preventDefault();
+        const form = document.getElementById("change-email-form");
+        form.classList.toggle("hidden");
+      };
+
+      // Change email form submission
+      document.getElementById("change-email-form").onsubmit = async function (e) {
+        e.preventDefault();
+        const newEmail = e.target.new_email.value.trim();
+
+        if (!newEmail || !/\S+@\S+\.\S+/.test(newEmail)) {
+          showMessage("Please enter a valid email address.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/send-otp/", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify({ email: newEmail }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            localStorage.setItem("user_email", newEmail);
+            document.getElementById("display-email").textContent = newEmail;
+            document.getElementById("change-email-form").classList.add("hidden");
+            showMessage("OTP sent to your new email address.");
+          } else {
+            showMessage(data.detail || "Failed to send OTP to new email.", true);
+          }
+        } catch (error) {
+          showMessage("Network error. Please try again.", true);
+        }
+      };
+
+      // Auto-focus on OTP input and format
+      const otpInput = document.querySelector('input[name="otp"]');
+      otpInput.focus();
+      
+      otpInput.addEventListener('input', function(e) {
+        // Only allow digits
+        e.target.value = e.target.value.replace(/\D/g, '');
+      });
+
+      // Initialize
+      initializeEmail();
+    </script>
+  </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Verify OTP</title>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="bg-cover bg-center min-h-screen flex items-center justify-center"
+    style="background-image: url('/static/images/background.jpeg')"
+  >
+    <div class="bg-white bg-opacity-90 p-8 rounded-xl shadow-xl w-full max-w-md">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-4 drop-shadow">
+        Email Verification
+      </h2>
+
+      <div id="email-display" class="mb-4 p-3 bg-blue-50 rounded text-center">
+        <p class="text-sm text-blue-800">
+          OTP sent to: <span id="display-email" class="font-semibold"></span>
+        </p>
+      </div>
+
+      <form id="otp-form" class="space-y-4">
+        <div>
+          <input
+            name="otp"
+            placeholder="Enter 6-digit OTP"
+            class="w-full border px-4 py-3 rounded text-center text-lg tracking-widest focus:outline-none focus:ring focus:border-blue-400"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+          />
+          <p class="text-xs text-gray-500 mt-1 text-center">
+            Enter the 6-digit code sent to your email
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition"
+        >
+          Verify OTP
+        </button>
+      </form>
+
+      <div class="mt-4 space-y-2 text-center text-sm text-gray-600">
+        <p>
+          Didn't receive the code?
+          <button id="resend-btn" class="text-blue-600 underline hover:text-blue-800">
+            Resend OTP
+          </button>
+        </p>
+        <p>
+          Wrong email?
+          <button id="change-email-toggle" class="text-blue-600 underline hover:text-blue-800">
+            Change Email
+          </button>
+        </p>
+      </div>
+
+      <form id="change-email-form" class="space-y-2 mt-4 hidden border-t pt-4">
+        <input
+          name="new_email"
+          type="email"
+          placeholder="Enter correct email address"
+          class="w-full border px-3 py-2 rounded"
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+        >
+          Send OTP to New Email
+        </button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <a href="/login/" class="text-blue-600 underline hover:text-blue-800 text-sm">
+          ← Back to Login
+        </a>
+      </div>
+
+      <div id="message" class="mt-4 p-3 rounded hidden">
+        <p id="message-text" class="text-sm"></p>
+      </div>
+    </div>
+
+    <script>
+      function getCSRFToken() {
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        return tokenMeta ? tokenMeta.getAttribute("content") : "";
+      }
+
+      function showMessage(text, isError = false) {
+        const messageDiv = document.getElementById("message");
+        const messageText = document.getElementById("message-text");
+
+        messageText.textContent = text;
+        messageDiv.className = `mt-4 p-3 rounded text-sm ${
+          isError
+            ? 'bg-red-100 border border-red-300 text-red-700'
+            : 'bg-green-100 border border-green-300 text-green-700'
+        }`;
+        messageDiv.classList.remove("hidden");
+
+        setTimeout(() => {
+          messageDiv.classList.add("hidden");
+        }, 5000);
+      }
+
+      function initializeEmail() {
+        let email = localStorage.getItem("user_email");
+        if (!email) {
+          const token = localStorage.getItem("access");
+          if (token) {
+            fetch("/api/profile/", {
+              headers: { Authorization: "Bearer " + token },
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.email) {
+                  email = data.email;
+                  localStorage.setItem("user_email", email);
+                  document.getElementById("display-email").textContent = email;
+                }
+              })
+              .catch(() => {
+                showMessage("Please login again to continue.", true);
+                setTimeout(() => (window.location.href = "/login/"), 2000);
+              });
+          } else {
+            showMessage("Please login or register first.", true);
+            setTimeout(() => (window.location.href = "/login/"), 2000);
+          }
+        } else {
+          document.getElementById("display-email").textContent = email;
+        }
+      }
+
+      document.getElementById("otp-form").onsubmit = async function (e) {
+        e.preventDefault();
+        const otp = e.target.otp.value.trim();
+        const email = localStorage.getItem("user_email");
+
+        if (!email || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+          showMessage("Please enter a valid 6-digit OTP.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/verify-otp/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify({ email, otp }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            localStorage.setItem("access", data.access);
+            localStorage.setItem("refresh", data.refresh);
+            localStorage.removeItem("user_email");
+
+            showMessage("✅ Email verified successfully! Redirecting...");
+
+            setTimeout(() => {
+              if (data.user && !data.user.is_profile_completed) {
+                window.location.href = "/complete-profile/";
+              } else {
+                window.location.href = "/profile/";
+              }
+            }, 1500);
+          } else {
+            showMessage(data.detail || "OTP verification failed. Please try again.", true);
+          }
+        } catch {
+          showMessage("Network error. Please check your connection.", true);
+        }
+      };
+
+      document.getElementById("resend-btn").onclick = async function (e) {
+        e.preventDefault();
+        const email = localStorage.getItem("user_email");
+
+        if (!email) {
+          showMessage("Email not found. Please try logging in again.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/send-otp/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            showMessage("New OTP sent to your email.");
+          } else {
+            showMessage(data.detail || "Failed to resend OTP.", true);
+          }
+        } catch {
+          showMessage("Network error. Please try again.", true);
+        }
+      };
+
+      document.getElementById("change-email-toggle").onclick = function () {
+        document.getElementById("change-email-form").classList.toggle("hidden");
+      };
+
+      document.getElementById("change-email-form").onsubmit = async function (e) {
+        e.preventDefault();
+        const newEmail = e.target.new_email.value.trim();
+
+        if (!newEmail || !/\S+@\S+\.\S+/.test(newEmail)) {
+          showMessage("Please enter a valid email address.", true);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/send-otp/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify({ email: newEmail }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            localStorage.setItem("user_email", newEmail);
+            document.getElementById("display-email").textContent = newEmail;
+            document.getElementById("change-email-form").classList.add("hidden");
+            showMessage("OTP sent to your new email.");
+          } else {
+            showMessage(data.detail || "Failed to send OTP.", true);
+          }
+        } catch {
+          showMessage("Network error. Please try again.", true);
+        }
+      };
+
+      // Input digit formatting
+      const otpInput = document.querySelector('input[name="otp"]');
+      otpInput.focus();
+      otpInput.addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/\D/g, "");
+      });
+
+      initializeEmail();
+    </script>
+  </body>
+</html>

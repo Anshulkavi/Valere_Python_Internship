@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Onboarding Flow</title>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <input type="hidden" name="next" value="{{ request.GET.next }}">
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-6 rounded shadow-lg w-full max-w-md text-center space-y-6">
+      <h1 class="text-2xl font-bold">👋 Welcome to CraftCulture</h1>
+      <p class="text-gray-600">Let’s get you started in 3 simple steps</p>
+
+      <div id="steps" class="space-y-4 text-left"></div>
+
+      <button
+        id="logoutBtn"
+        onclick="logoutUser()"
+        class="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 rounded hidden"
+      >
+        Logout
+      </button>
+    </div>
+
+    <script>
+      function getCSRFToken() {
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        return tokenMeta ? tokenMeta.getAttribute("content") : "";
+      }
+
+      const stepsEl = document.getElementById("steps");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      const accessToken = localStorage.getItem("access");
+      const refreshToken = localStorage.getItem("refresh");
+
+      function createStep(title, desc, link, enabled, done) {
+        return `
+          <div class="p-4 border rounded ${done ? "bg-green-50 border-green-300" : ""}">
+            <div class="flex justify-between items-center">
+              <div>
+                <h2 class="text-lg font-semibold">${title}</h2>
+                <p class="text-sm text-gray-500">${desc}</p>
+              </div>
+              ${
+                done
+                  ? "✔️"
+                  : enabled
+                  ? `<a href="${link}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">Continue</a>`
+                  : "🔒"
+              }
+            </div>
+          </div>
+        `;
+      }
+
+      function renderSteps({ isRegistered, isEmailVerified, isProfileCompleted }) {
+        let html = "";
+
+        html += createStep(
+          "1. Register",
+          "Create your account",
+          "{% url 'register' %}",
+          !isRegistered,
+          isRegistered
+        );
+
+      html += createStep(
+  "2. Verify Email",
+  "Enter the OTP sent to your email",
+  accessToken ? "/trigger-verify/" : "{% url 'login' %}?next=/trigger-verify/",
+  true,
+  isEmailVerified
+);
+
+
+
+        html += createStep(
+          "3. Complete Profile",
+          "Fill out your details",
+          "{% url 'profile' %}",
+          isEmailVerified && !isProfileCompleted,
+          isProfileCompleted
+        );
+
+        html += createStep(
+          "4. Login",
+          "Access your account",
+          "{% url 'login' %}",
+          true,
+          isRegistered
+        );
+
+        stepsEl.innerHTML = html;
+
+        if (isRegistered) {
+          logoutBtn.classList.remove("hidden");
+        } else {
+          logoutBtn.classList.add("hidden");
+        }
+      }
+
+      async function fetchUserStatus() {
+        if (!accessToken) {
+          renderSteps({
+            isRegistered: false,
+            isEmailVerified: false,
+            isProfileCompleted: false,
+          });
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/profile/", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (!res.ok) throw new Error("Invalid token");
+
+          const data = await res.json();
+
+          renderSteps({
+            isRegistered: true,
+            isEmailVerified: data.is_email_verified,
+            isProfileCompleted: data.is_profile_completed,
+          });
+        } catch (err) {
+          console.error("Error fetching profile:", err);
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          renderSteps({
+            isRegistered: false,
+            isEmailVerified: false,
+            isProfileCompleted: false,
+          });
+        }
+      }
+
+      
+      document.addEventListener('click', function (e) {
+  if (e.target && e.target.matches('a[data-step="verify-email"]')) {
+    e.preventDefault();
+
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+      // Not logged in → send to login page with redirect
+      window.location.href = "{% url 'login' %}?next=/trigger-verify/";
+    } else {
+      // Logged in → trigger verify route which sends OTP then redirects to verify_otp
+      window.location.href = "/trigger-verify/";
+    }
+  }
+});
+
+
+      function logoutUser() {
+        fetch("/api/logout/", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+          },
+          body: JSON.stringify({ refresh: refreshToken }),
+        }).finally(() => {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          window.location.reload();
+        });
+      }
+
+      fetchUserStatus();
+    </script>
+  </body>
+</html>
