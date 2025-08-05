@@ -10,9 +10,20 @@ services:
       - .env
     depends_on:
       - redis
+      - celery
 
   redis:
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
       - "8001:8001"  # Redis web UI
+
+  celery:
+    build: .
+    command: celery -A onboarding_system worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    env_file:
+      - .env

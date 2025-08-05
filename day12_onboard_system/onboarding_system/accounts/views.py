@@ -11,7 +11,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveUpdateAPIView
-from .utils import ( send_otp_email, generate_otp,
+from .utils import ( generate_otp,
         get_tokens_for_user, save_otp_to_redis,get_otp_from_redis,
         delete_otp_from_redis, can_resend_otp)
 from django.views.decorators.csrf import csrf_exempt
@@ -20,6 +20,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
+from accounts.tasks import send_otp_email_task, send_welcome_email_task
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -33,12 +34,14 @@ class RegisterView(APIView):
             # OTP.objects.filter(user=user).delete()
             # OTP.objects.create(user=user, code=otp_code)
             save_otp_to_redis(user.email, otp_code)
-            send_otp_email(user, otp_code)
+            send_otp_email_task.delay(user.email, user.username, otp_code)
             
             # Store email in session for OTP verification
             request.session['email'] = user.email
             request.session['user_id'] = user.id
             
+            send_welcome_email_task.delay(user.email)
+
             return Response({
                 'message': 'User registered successfully. OTP sent to your email.',
                 'email': user.email
@@ -150,7 +153,7 @@ class ResendOTPView(APIView):
         save_otp_to_redis(user.email, otp_code)
 
         # ✅ Send email
-        send_otp_email(user, otp_code)
+        send_otp_email_task.delay(user.email, user.username, otp_code)
         
         # ✅ Optional: store email in session
         request.session['email'] = user.email
@@ -281,7 +284,7 @@ def trigger_verify_view(request):
     otp_code = generate_otp()
     OTP.objects.filter(user=user).delete()  # Clear old OTPs
     OTP.objects.create(user=user, code=otp_code)
-    send_otp_email(user, otp_code)
+    send_otp_email_task.delay(user.email,user.username, otp_code)
     
     # Store email in session for verification
     request.session['email'] = user.email
@@ -311,7 +314,7 @@ class SendOTPView(APIView):
         otp_code = generate_otp()
         OTP.objects.filter(user=user).delete()
         OTP.objects.create(user=user, code=otp_code)
-        send_otp_email(user, otp_code)
+        send_otp_email_task.delay(user.email,user.username,otp_code)
         
         # Store in session
         request.session['email'] = email

@@ -1,5 +1,5 @@
 import random
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
 import redis
 from django.conf import settings
@@ -16,30 +16,30 @@ def get_tokens_for_user(user):
 def generate_otp():
     return str(random.SystemRandom().randint(100000, 999999))
 
-def send_otp_email(user, otp_code):
-    html_message = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2 style="color: #2c3e50;">Welcome to Our Platform!</h2>
-        <p>Hi <strong>{user.username}</strong>,</p>
-        <p>Your OTP for email verification is:</p>
-        <h1 style="color: #e74c3c;">{otp_code}</h1>
-        <p>This OTP is valid for <strong>5 minutes</strong>.</p>
-        <p>If you did not initiate this request, you can safely ignore this message.</p>
-        <br>
-        <p style="color: #7f8c8d;">Thanks,<br>The Team</p>
-      </body>
-    </html>
-    """
+# def send_otp_email(user, otp_code):
+#     html_message = f"""
+#     <html>
+#       <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+#         <h2 style="color: #2c3e50;">Welcome to Our Platform!</h2>
+#         <p>Hi <strong>{user.username}</strong>,</p>
+#         <p>Your OTP for email verification is:</p>
+#         <h1 style="color: #e74c3c;">{otp_code}</h1>
+#         <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+#         <p>If you did not initiate this request, you can safely ignore this message.</p>
+#         <br>
+#         <p style="color: #7f8c8d;">Thanks,<br>The Team</p>
+#       </body>
+#     </html>
+#     """
 
-    send_mail(
-        subject="Verify Your Email - OTP Inside",
-        message=f"Your OTP is {otp_code}",
-        from_email=None,  # Will use DEFAULT_FROM_EMAIL from settings.py
-        recipient_list=[user.email],
-        fail_silently=False,
-        html_message=html_message
-    )
+#     send_mail(
+#         subject="Verify Your Email - OTP Inside",
+#         message=f"Your OTP is {otp_code}",
+#         from_email=None,  # Will use DEFAULT_FROM_EMAIL from settings.py
+#         recipient_list=[user.email],
+#         fail_silently=False,
+#         html_message=html_message
+#     )
 
 redis_client = redis.Redis(
     host='redis',
