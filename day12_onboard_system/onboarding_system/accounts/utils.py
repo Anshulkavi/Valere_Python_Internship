@@ -52,7 +52,8 @@ def save_otp_to_redis(email, otp):
     redis_client.setex(f"otp:{email}", 300, otp)  #expires in 5mins
 
 def get_otp_from_redis(email):
-    return redis_client.get(f"otp:{email}")
+    otp = redis_client.get(f"otp:{email}")
+    return otp.decode() if otp else None
 
 def delete_otp_from_redis(email):
     redis_client.delete(f"otp:{email}")
