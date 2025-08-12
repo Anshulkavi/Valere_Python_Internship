@@ -9,6 +9,8 @@ import {
   ArrowLeft,
   MessageSquare,
   Trash2,
+  Share2,
+  Check
 } from "lucide-react";
 import { postsAPI } from "../api/posts";
 import { useAuth } from "../hooks/useAuth";
@@ -28,6 +30,9 @@ const PostDetailPage = () => {
   // State for the new comment form
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  //New state for the share button's "Copied!" feedback
+  const [copied, setCopied] = useState(false);
 
   // Fetch post and comments when the component loads or ID changes
   useEffect(() => {
@@ -109,6 +114,27 @@ const PostDetailPage = () => {
     }
   };
 
+  const handleShare = async () => {
+        const shareData = {
+            title: post.title,
+            text: `Check out this post: ${post.title}`,
+            url: window.location.href,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error('Share failed:', err);
+            }
+        } else {
+            // Fallback for browsers that do not support Web Share API
+            navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+        }
+    };
+
   // --- Render Logic ---
 
   if (loading) return <LoadingSpinner />;
@@ -187,6 +213,13 @@ const PostDetailPage = () => {
               <span>Edit</span>
             </Link>
           )}
+          <button
+                    onClick={handleShare}
+                    className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                    {copied ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
+                    <span>{copied ? 'Copied!' : 'Share'}</span>
+                </button>
         </div>
       </div>
 
