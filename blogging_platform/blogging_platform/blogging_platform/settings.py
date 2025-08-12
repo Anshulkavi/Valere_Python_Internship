@@ -242,12 +242,12 @@ ROOT_URLCONF = 'blogging_platform.urls'
 WSGI_APPLICATION = 'blogging_platform.wsgi.application'
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.Templates',
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.django',
+                'django.template.context_processors.debug', # <-- CORRECTED LINE
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
