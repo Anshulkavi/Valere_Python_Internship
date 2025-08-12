@@ -259,12 +259,19 @@ TEMPLATES = [
 # --- Database ---
 
 # This reads the DATABASE_URL from your .env file and connects to the Docker container
+import os
+from dotenv import load_dotenv
+import dj_database_url
+
+load_dotenv()  # Force load .env from project root
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
+    'default': dj_database_url.parse(
+os.environ.get("DATABASE_URL", "").strip(),
         conn_max_age=600
     )
 }
+
 
 # --- User and Authentication ---
 
