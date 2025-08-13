@@ -27,6 +27,9 @@ const PostDetailPage = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+
   // State for the new comment form
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -223,13 +226,21 @@ const PostDetailPage = () => {
         </div>
       </div>
 
-      {post.featured_image && (
+      {/* {post.featured_image && (
         <img
           src={post.featured_image}
           alt={post.title}
           className="w-full h-auto max-h-[500px] object-cover rounded-xl mb-8 shadow-lg"
         />
-      )}
+      )} */}
+     {post.featured_image && (
+  <img
+    src={`${import.meta.env.VITE_BACKEND_URL}${post.featured_image}`}
+    alt={post.title}
+    className="w-full h-auto max-h-[500px] object-cover rounded-xl mb-8 shadow-lg"
+  />
+)}
+
 
       <div className="prose prose-lg max-w-none text-gray-800 leading-relaxed whitespace-pre-wrap">
         {post.content}
